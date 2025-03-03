@@ -108,7 +108,7 @@ jobs:
             libncursesw5-dev \
             libffi-dev \
             uuid-dev \
-            libffi7
+            libffi8
 
       - name: Install Python dependencies
         run: |
