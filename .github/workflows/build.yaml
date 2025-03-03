@@ -24,10 +24,10 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pyinstaller requests PyQt5 beautifulsoup4
+          pip install pyinstaller requests PyQt5 beautifulsoup4 aiohttp
 
       - name: Build executable
-        run: pyinstaller --onefile iptest_pyqt.py
+        run: pyinstaller --onefile --hidden-import aiohttp --hidden-import aiohttp.client --hidden-import aiohttp.client_proto --hidden-import aiohttp.client_reqrep --hidden-import aiohttp.http_parser --hidden-import aiohttp.http_writer --hidden-import aiohttp.streams --hidden-import aiohttp.http_websocket iptest_pyqt.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -52,7 +52,7 @@ jobs:
           pip install pyinstaller requests PyQt5 beautifulsoup4
 
       - name: Build executable
-        run: pyinstaller --onefile iptest_pyqt.py
+        run: pyinstaller --onefile --hidden-import aiohttp --hidden-import aiohttp.client --hidden-import aiohttp.client_proto --hidden-import aiohttp.client_reqrep --hidden-import aiohttp.http_parser --hidden-import aiohttp.http_writer --hidden-import aiohttp.streams --hidden-import aiohttp.http_websocket iptest_pyqt.pys
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4

@@ -107,7 +107,7 @@ android.api = 33
 android.minapi = 21
 
 # (int) Android SDK version to use
-android.sdk = 33
+# android.sdk = 33
 
 # (str) Android NDK version to use
 android.ndk = 25b
@@ -282,7 +282,7 @@ android.add_compile_options = "sourceCompatibility = 1.8", "targetCompatibility 
 #android.copy_libs = 1
 
 # (list) The Android archs to build for, choices: armeabi-v7a, arm64-v8a, x86, x86_64
-android.arch = arm64-v8a
+android.archs = arm64-v8a, x86_64
 
 # (int) overrides automatic versionCode computation (used in build.gradle)
 # this is not the same as app version and should only be edited if you know what you're doing
