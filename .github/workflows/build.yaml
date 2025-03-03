@@ -52,7 +52,7 @@ jobs:
           pip install pyinstaller requests PyQt5 beautifulsoup4
 
       - name: Build executable
-        run: pyinstaller --onefile --hidden-import aiohttp --hidden-import aiohttp.client --hidden-import aiohttp.client_proto --hidden-import aiohttp.client_reqrep --hidden-import aiohttp.http_parser --hidden-import aiohttp.http_writer --hidden-import aiohttp.streams --hidden-import aiohttp.http_websocket iptest_pyqt.pys
+        run: pyinstaller --onefile --hidden-import aiohttp --hidden-import aiohttp.client --hidden-import aiohttp.client_proto --hidden-import aiohttp.client_reqrep --hidden-import aiohttp.http_parser --hidden-import aiohttp.http_writer --hidden-import aiohttp.streams --hidden-import aiohttp.http_websocket iptest_pyqt.py
 
       - name: Upload artifact
         uses: actions/upload-artifact@v4
@@ -66,61 +66,65 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      - name: Set up JDK
+        uses: actions/setup-java@v3
         with:
-          python-version: '3.11'
+          distribution: 'temurin'
+          java-version: '17'
+          cache: 'gradle'
 
-      - name: Install system dependencies
-        run: |
-          sudo apt-get update
-          sudo apt-get install -y \
-            python3-pip \
-            build-essential \
-            git \
-            python3 \
-            python3-dev \
-            ffmpeg \
-            libsdl2-dev \
-            libsdl2-image-dev \
-            libsdl2-mixer-dev \
-            libsdl2-ttf-dev \
-            libportmidi-dev \
-            libswscale-dev \
-            libavformat-dev \
-            libavcodec-dev \
-            zlib1g-dev \
-            libgstreamer1.0 \
-            gstreamer1.0-plugins-base \
-            gstreamer1.0-plugins-good \
-            build-essential \
-            libsqlite3-dev \
-            sqlite3 \
-            bzip2 \
-            libbz2-dev \
-            zlib1g-dev \
-            libssl-dev \
-            openssl \
-            libgdbm-dev \
-            libgdbm-compat-dev \
-            liblzma-dev \
-            libreadline-dev \
-            libncursesw5-dev \
-            libffi-dev \
-            uuid-dev \
-            libffi8
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v3
 
-      - name: Install Python dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install buildozer cython requests PyQt5 beautifulsoup4 aiohttp
+      - name: Grant execute permission for gradlew
+        run: chmod +x NetworkStatusAndroid/gradlew
 
       - name: Build APK
+        working-directory: NetworkStatusAndroid
         run: |
-          buildozer -v android debug
+          ./gradlew assembleDebug
+          ./gradlew bundleRelease
 
-      - name: Upload artifact
+      - name: Sign APK
+        uses: r0adkll/sign-android-release@v1
+        with:
+          releaseDirectory: NetworkStatusAndroid/app/build/outputs/apk/debug
+          signingKeyBase64: ${{ secrets.SIGNING_KEY }}
+          alias: ${{ secrets.KEY_ALIAS }}
+          keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
+          keyPassword: ${{ secrets.KEY_PASSWORD }}
+
+      - name: Upload Debug APK
         uses: actions/upload-artifact@v4
         with:
-          name: android-build
-          path: bin/*.apk
+          name: app-debug
+          path: NetworkStatusAndroid/app/build/outputs/apk/debug/app-debug.apk
+
+      - name: Upload Release Bundle
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-release
+          path: NetworkStatusAndroid/app/build/outputs/bundle/release/app-release.aab
+
+  create-release:
+    needs: build-android
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    steps:
+      - name: Download Artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            artifacts/app-debug/app-debug.apk
+            artifacts/app-release/app-release.aab
+          tag_name: v${{ github.run_number }}
+          name: Release v${{ github.run_number }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
